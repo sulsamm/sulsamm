@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Gray Calculator</title>
+<style>
+  /* Reset and base */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: #333;
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .calculator {
+    background: #444;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+    width: 320px;
+    max-width: 100vw;
+    padding: 20px 20px 30px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .display {
+    background: #222;
+    color: #eee;
+    font-size: 2.2rem;
+    border-radius: 10px;
+    padding: 15px 20px;
+    text-align: right;
+    margin-bottom: 20px;
+    user-select: none;
+    min-height: 60px;
+    box-shadow: inset 0 3px 5px rgba(255,255,255,0.1);
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 15px;
+  }
+  button {
+    background: #666;
+    color: #eee;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    padding: 18px 0;
+    box-shadow: 0 4px #555;
+    cursor: pointer;
+    outline-offset: 3px;
+    transition: background 0.3s, box-shadow 0.15s;
+    user-select: none;
+  }
+  button:active {
+    box-shadow: 0 2px #333;
+    transform: translateY(2px);
+  }
+  button.operator {
+    background: #888;
+    color: #fff;
+  }
+  button.equal {
+    background: #28a745;
+    color: white;
+    box-shadow: 0 5px #1c7430;
+    grid-column: span 2;
+  }
+  button.equal:active {
+    box-shadow: 0 2px #1c7430;
+  }
+  button.clear {
+    background: #cc3333;
+    color: white;
+    box-shadow: 0 5px #8b1c1c;
+  }
+  button.clear:active {
+    box-shadow: 0 2px #8b1c1c;
+  }
+  @media (max-width: 360px) {
+    .calculator {
+      width: 95vw;
+      padding: 15px 15px 25px 15px;
+    }
+    .display {
+      font-size: 2rem;
+      min-height: 50px;
+      padding: 10px 15px;
+    }
+    button {
+      font-size: 1.3rem;
+      padding: 14px 0;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Calculator">
+    <div id="display" class="display" aria-live="polite" aria-atomic="true">0</div>
+    <div class="buttons">
+      <button class="clear" id="clear" aria-label="Clear">C</button>
+      <button class="operator" data-op="/" aria-label="Divide">÷</button>
+      <button class="operator" data-op="*" aria-label="Multiply">×</button>
+      <button class="operator" data-op="-" aria-label="Subtract">−</button>
+
+      <button data-num="7" aria-label="Seven">7</button>
+      <button data-num="8" aria-label="Eight">8</button>
+      <button data-num="9" aria-label="Nine">9</button>
+      <button class="operator" data-op="+" aria-label="Add">+</button>
+
+      <button data-num="4" aria-label="Four">4</button>
+      <button data-num="5" aria-label="Five">5</button>
+      <button data-num="6" aria-label="Six">6</button>
+      <button id="empty"></button>
+
+      <button data-num="1" aria-label="One">1</button>
+      <button data-num="2" aria-label="Two">2</button>
+      <button data-num="3" aria-label="Three">3</button>
+      <button class="equal" id="equals" aria-label="Equals">=</button>
+
+      <button data-num="0" style="grid-column: span 2;" aria-label="Zero">0</button>
+      <button data-num="." aria-label="Decimal point">.</button>
+    </div>
+  </div>
+
+<script>
+  (() => {
+    const display = document.getElementById('display');
+    const clearBtn = document.getElementById('clear');
+    const equalsBtn = document.getElementById('equals');
+    const btns = document.querySelectorAll('button');
+    let expression = '';
+    let lastInputIsOperator = false;
+    let resultShown = false;
+
+    function safeEval(expr) {
+      // Only allow digits, + - * / . and spaces
+      if (/[^0-9+\-*/. ]/.test(expr)) return null;
+      try {
+        // eslint-disable-next-line no-eval
+        return Function('"use strict";return (' + expr + ')')();
+      } catch {
+        return null;
+      }
+    }
+
+    function updateDisplay() {
+      if (expression === '') {
+        display.textContent = '0';
+      } else {
+        // Replace * and / with × and ÷ for display
+        let disp = expression.replace(/\*/g, '×').replace(/\//g, '÷');
+        display.textContent = disp;
+      }
+    }
+
+    function clearAll() {
+      expression = '';
+      lastInputIsOperator = false;
+      resultShown = false;
+      updateDisplay();
+    }
+
+    function inputNum(num) {
+      if (resultShown) {
+        // Start new expression if inputting number after result
+        if ('0123456789.'.includes(num)) {
+          expression = '';
+        }
+        resultShown = false;
+      }
+      if (num === '.') {
+        // Prevent multiple decimals in last number
+        const parts = expression.split(/[\+\-\*\/]/);
+        const lastPart = parts[parts.length-1];
+        if (lastPart.includes('.')) {
+          return; // ignore multiple decimal points in a number
+        }
+      }
+      expression += num;
+      lastInputIsOperator = false;
+      updateDisplay();
+    }
+
+    function inputOperator(op) {
+      if (expression === '' && op !== '-') {
+        // Do not allow operator except minus at beginning
+        return;
+      }
+      if (lastInputIsOperator) {
+        // Replace last operator with new one
+        expression = expression.slice(0, -1) + op;
+      } else {
+        if (resultShown) {
+          resultShown = false;
+        }
+        expression += op;
+      }
+      lastInputIsOperator = true;
+      updateDisplay();
+    }
+
+    function calculate() {
+      if (expression === '') return;
+      if (lastInputIsOperator) {
+        // Trim trailing operator before calculation
+        expression = expression.slice(0, -1);
+      }
+      let result = safeEval(expression);
+      if (result === null || result === Infinity || Number.isNaN(result)) {
+        alert("Error: Invalid calculation");
+        clearAll();
+        return;
+      }
+      // Round to max 10 decimals to avoid long float precision strings
+      result = +result.toFixed(10);
+      // Show full expression with operator symbols + "=" + result
+      let dispExpr = expression.replace(/\*/g, '×').replace(/\//g, '÷');
+      display.textContent = dispExpr + "=" + result;
+      expression = result.toString();
+      resultShown = true;
+      lastInputIsOperator = false;
+    }
+
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.num !== undefined) {
+          inputNum(btn.dataset.num);
+        } else if (btn.classList.contains('operator')) {
+          inputOperator(btn.dataset.op);
+        } else if (btn.id === 'clear') {
+          clearAll();
+        } else if (btn.id === 'equals') {
+          calculate();
+        }
+      });
+    });
+
+    clearAll();
+  })();
+</script>
+
+</body>
+</html>
+

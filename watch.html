@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jam Real-Time Analog & Digital</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #0f0f0f, #000000);
+      color: #00ffcc;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: gold;
+      text-shadow: 0 0 10px #ffcc00;
+    }
+
+    #digital-clock, #date {
+      font-size: 2em;
+      margin: 10px 0;
+      letter-spacing: 0.1em;
+      background: #111;
+      padding: 20px 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004d40;
+      animation: glow 2s infinite alternate;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #digital-clock {
+      font-size: 4em;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 10px #00ffcc; }
+      to { box-shadow: 0 0 30px #00ffff; }
+    }
+
+    .water-drop {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: rgba(0, 255, 255, 0.7);
+      border-radius: 50%;
+      animation: fall 1s forwards;
+      opacity: 0;
+    }
+
+    @keyframes fall {
+      0% {
+        top: -20px;
+        opacity: 1;
+      }
+      100% {
+        top: 100%;
+        opacity: 0;
+      }
+    }
+
+    .analog-clock {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      border: 10px solid gold;
+      border-radius: 50%;
+      background: #111;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      background: #00ffcc;
+      border-radius: 6px;
+    }
+
+    .hour {
+      width: 8px;
+      height: 60px;
+      background: #ffcc00;
+    }
+
+    .minute {
+      width: 6px;
+      height: 90px;
+    }
+
+    .second {
+      width: 3px;
+      height: 100px;
+      background: #ff0066;
+    }
+
+    .center-dot {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: gold;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px gold;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>Jam Real-Time</h1>
+
+  <div id="date">Loading date...</div>
+  <div id="digital-clock">00:00:00</div>
+
+  <div class="analog-clock">
+    <div class="hand hour" id="hour"></div>
+    <div class="hand minute" id="minute"></div>
+    <div class="hand second" id="second"></div>
+    <div class="center-dot"></div>
+  </div>
+
+  <script>
+    function createWaterDrop() {
+      const drop = document.createElement('div');
+      drop.className = 'water-drop';
+      document.getElementById('digital-clock').appendChild(drop);
+      setTimeout(() => {
+        drop.remove();
+      }, 1000);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const s = now.getSeconds();
+
+      // Digital clock
+      const digital = document.getElementById("digital-clock");
+      digital.textContent = 
+        String(h).padStart(2, '0') + ":" + 
+        String(m).padStart(2, '0') + ":" + 
+        String(s).padStart(2, '0');
+
+      createWaterDrop();
+
+      // Analog clock
+      const hourDeg = (h % 12) * 30 + m * 0.5;
+      const minuteDeg = m * 6;
+      const secondDeg = s * 6;
+
+      document.getElementById("hour").style.transform = `rotate(${hourDeg}deg)`;
+      document.getElementById("minute").style.transform = `rotate(${minuteDeg}deg)`;
+      document.getElementById("second").style.transform = `rotate(${secondDeg}deg)`;
+    }
+
+    function updateDate() {
+      const now = new Date();
+      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                      "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      const dayName = days[now.getDay()];
+      const date = now.getDate();
+      const month = months[now.getMonth()];
+      const year = now.getFullYear();
+
+      const dateText = `${dayName}, ${date} ${month} ${year}`;
+      document.getElementById("date").textContent = dateText;
+    }
+
+    setInterval(() => {
+      updateClock();
+      updateDate();
+    }, 1000);
+
+    updateClock();
+    updateDate();
+  </script>
+</body>
+</html>
